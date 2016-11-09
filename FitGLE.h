@@ -1,3 +1,6 @@
+#ifndef _FITGLE_H_
+#define _FITGLE_H_
+
 #include <cstdlib>
 #include <cstdio>
 #include <vector>
@@ -35,3 +38,5 @@ private:
 };
 
 }
+
+#endif
