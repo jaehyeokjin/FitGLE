@@ -10,15 +10,15 @@ namespace FITGLE_NS {
 class Frame
 {
 public:
-    Frame();
+    Frame(int n, char* filename);
     ~Frame();
     void readFrame();
 private:
     FILE* trajectory;
     int numParticles;
-    std::vector<double> positions;
-    std::vector<double> residualForces;
-    std::vector<double> velocities;
+    std::vector<std::vector<double> > positions;
+    std::vector<std::vector<double> > residualForces;
+    std::vector<std::vector<double> > velocities;
 };
 }
 

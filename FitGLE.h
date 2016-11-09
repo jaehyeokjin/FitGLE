@@ -14,6 +14,8 @@ struct InputParameters
     double end;    //end distance r1
     int    splineOrder;
     int    numSplines;
+    double boxLength; 
+    int    steps;
     FILE*  fileTraj;
 };  //Structure to store input parameters
 
