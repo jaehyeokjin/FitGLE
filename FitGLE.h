@@ -4,7 +4,9 @@
 #include <cstdlib>
 #include <cstdio>
 #include <vector>
+#include <memory>
 #include <algorithm>
+#include <gsl/gsl_bspline.h>
 
 namespace FITGLE_NS {
 
@@ -30,13 +32,22 @@ public:
     void accumulateNormalEquation();
     void leastSquareSolver();
     void output();
+    
+    //helper functions
+    double distance(std::vector<double> &, std::vector<double> &);
 
 private:
     std::shared_ptr<class Frame> trajFrame;
     std::shared_ptr<struct InputParameters> info; 
+    std::vector<double> divPoints;  // divide points of the b-spline radial ranges
     std::vector<std::vector<double> > normalMatrix;
     std::vector<double> normalVector;
     std::vector<double> splineCoefficients;
+
+    //gsl members for b-splines
+    gsl_bspline_workspace *bw;
+    gsl_vector *splineValue;
+
 };
 
 }
