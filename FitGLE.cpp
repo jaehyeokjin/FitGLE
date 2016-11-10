@@ -24,4 +24,34 @@ FitGLE::FitGLE(int argc, char** argv)
     // Set up the size of splines according to order and numbers
     int numBreakds = info->numSplines + 2 - info->splineOrder;
     normalVector.resize(numSplines);
+    splineCoefficients.resize(numSplines);
+    normalMatrix.resize(numSplines);
+    for (auto&& i : normalMatrix)
+    {
+        i.resize(numSplines);
+    }
+}
+
+FitGLE::~FitGLE()
+{
+    printf("Exiting the Fitting GLE process...\n");
+}
+
+
+// Accumulate the normal equation for this particular frame
+void FitGLE::accumulateNormalEquation()
+{
+    int nall = trajFrame->numParticles;
+    int nSplines = info->numSplines;
+
+    std::vector<std::vector<double> > frameMatrix(nall, std::vector<double>(nSplines));
+    
+    for (int i=0; i<nall; i++)
+    {
+        for (int j=0; j<nall; j++)
+        {
+            double rij = distance(frameMatrix->positions[i], frameMatrix->positions[j])
+        }
+    }
+    
 }

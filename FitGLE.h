@@ -32,8 +32,8 @@ public:
     void output();
 
 private:
-    Frame* trajFrame;
-    struct InputParameters* info; 
+    std::shared_ptr<class Frame> trajFrame;
+    std::shared_ptr<struct InputParameters> info; 
     std::vector<std::vector<double> > normalMatrix;
     std::vector<double> normalVector;
     std::vector<double> splineCoefficients;
