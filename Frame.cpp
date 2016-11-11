@@ -18,6 +18,7 @@ Frame::Frame(int n, char* fileName)
 
 ~Frame::Frame()
 {
+    fclose(trajectory);
     printf("cleaning up Frame Information\n");
 }
 

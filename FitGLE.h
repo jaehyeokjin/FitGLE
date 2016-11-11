@@ -4,8 +4,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include <vector>
+#include <Frame.h>
 #include <memory>
-#include <algorithm>
 #include <gsl/gsl_bspline.h>
 
 namespace FITGLE_NS {
@@ -16,6 +16,7 @@ struct InputParameters
     double end;    //end distance r1
     int    splineOrder;
     int    numSplines;
+    int    outputPrecision;
     double boxLength; 
     int    steps;
     FILE*  fileTraj;
@@ -35,6 +36,7 @@ public:
     
     //helper functions
     double distance(std::vector<double> &, std::vector<double> &);
+    vector<double> parallelVelocity(int i, int j);
 
 private:
     std::shared_ptr<class Frame> trajFrame;
