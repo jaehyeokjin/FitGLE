@@ -4,11 +4,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
+#include "FitGLE.h"
 
 namespace FITGLE_NS {
 
 class Frame
 {
+    friend class FitGLE;
 public:
     Frame(int n, char* filename);
     ~Frame();

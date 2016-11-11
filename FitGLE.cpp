@@ -1,9 +1,9 @@
-#include <FitGLE.h>
+#include "FitGLE.h"
+#include "comm.h"
 #include <cmath>
 #include <numeric>
 #include <functional>
 #include <algorithm>
-#include <comm.h>
 #include <cassert>
 #include <gsl/gsl_bspline.h>
 #include <lapacke.h>
@@ -31,17 +31,17 @@ FitGLE::FitGLE(int argc, char** argv)
     VAR_END
            
     printf("set up trajectory files\n");
-    trajFrame = new Frame(atoi(argv[2]), argv[1]);
+    trajFrame = std::make_shared<Frame>(atoi(argv[2]), argv[1]);
     // Initialize the Normal Equation matrix and vectors
     // Set up the size of splines according to order and numbers
     printf("set up b-spline data structures\n");
     int numBreaks = info->numSplines + 2 - info->splineOrder;
-    normalVector.resize(numSplines);
-    splineCoefficients.resize(numSplines);
-    normalMatrix.resize(numSplines);
+    normalVector.resize(info->numSplines);
+    splineCoefficients.resize(info->numSplines);
+    normalMatrix.resize(info->numSplines);
     for (auto&& i : normalMatrix)
     {
-        i.resize(numSplines);
+        i.resize(info->numSplines);
     }
 
     // Initialize the spline set up
@@ -54,11 +54,11 @@ FitGLE::FitGLE(int argc, char** argv)
 FitGLE::~FitGLE()
 {
     gsl_bspline_free(bw);
-    gsl_vector_free(B);
+    gsl_vector_free(splineValue);
     printf("Exiting the Fitting GLE process...\n");
 }
 
-inline void FitGLE::distance(vector<double> & A, vector<double> & B)
+inline double FitGLE::distance(std::vector<double> & A, std::vector<double> & B)
 {
     double dx = A[0] - B[0];
     if (dx > 0.5 * info->boxLength) dx = dx - info->boxLength;
@@ -73,7 +73,7 @@ inline void FitGLE::distance(vector<double> & A, vector<double> & B)
     return sqrt(dx*dx + dy*dy + dz*dz);
 }
 
-inline vector<double> FitGLE::parallelVelocity(int i, int j)
+inline std::vector<double> FitGLE::parallelVelocity(int i, int j)
 {
     double dx = trajFrame->positions[i][0] - trajFrame->positions[j][0];
     if (dx > 0.5 * info->boxLength) dx = dx - info->boxLength;
@@ -87,8 +87,8 @@ inline vector<double> FitGLE::parallelVelocity(int i, int j)
 
     double rij = sqrt(dx*dx + dy*dy + dz*dz);
     double eij[] = {dx/rij, dy/rij, dz/rij};
-    vector<double> vij(3);
-    std::transform(trajFrame->velocities[i].begin(), trajFrame->velocities[i].end(), trajFrame->velocities[j].begin(), vij, std::minus<double>());
+    std::vector<double> vij;
+    std::transform(trajFrame->velocities[i].begin(), trajFrame->velocities[i].end(), trajFrame->velocities[j].begin(), std::back_inserter(vij), std::minus<double>());
      
     double projection = vij[0] * eij[0] + vij[1] * eij[1] + vij[2] * eij[2];
     vij[0] = projection * eij[0];
@@ -113,7 +113,7 @@ void FitGLE::accumulateNormalEquation()
             double rij = distance(trajFrame->positions[i], trajFrame->positions[j]);
             gsl_bspline_eval(rij, splineValue, bw);
             
-            vector<double> dv = parallelVelocity(i, j);
+            std::vector<double> dv = parallelVelocity(i, j);
             
             for (int m=0; m<nSplines; m++)
             {
@@ -142,7 +142,7 @@ void FitGLE::accumulateNormalEquation()
    
         double sum_b = 0.0; 
         for (int k=0; k<3 * nall; k++)
-            sum_b += frameMatrix[k][m] * trajFrame->residualForce[k/3][k%3];
+            sum_b += frameMatrix[k][m] * trajFrame->residualForces[k/3][k%3];
         normalVector[m] = sum_b;
     }
 }
@@ -168,15 +168,14 @@ void FitGLE::leastSquareSolver()
     int LDA = N;
     int ldb = 1;
     int* ipiv = new int[N];
-    int info = LAPACKE_dgesv(LAPACK_ROW_MAJOR, N, NRHS, G, LDA, ipiv, b, ldb);
+    int solverInfo = LAPACKE_dgesv(LAPACK_ROW_MAJOR, N, NRHS, G, LDA, ipiv, b, ldb);
    
-    printf("LSQ Solver Info: %d\n", info);
+    printf("LSQ Solver Info: %d\n", solverInfo);
 
     for (int m=0; m<info->numSplines; m++)
         splineCoefficients[m] = b[m];
 
     delete[] G;
-    delete[] phi;
     delete[] b;
     delete[] ipiv;
 }
@@ -188,7 +187,7 @@ void FitGLE::output()
     double end = info->end;
     double precision = info->outputPrecision;
 
-    FILE* fp = fopen("gamma_out.dat", 'w');
+    FILE* fp = fopen("gamma_out.dat", "w");
 
     while (start < end)
     {

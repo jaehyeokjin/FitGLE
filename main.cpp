@@ -1,7 +1,6 @@
-#include <FitGLE.h>
-#include <Frame.h>
-#include <cstdlib>
-#include <cstdio>
+#include "FitGLE.h"
+
+using namespace FITGLE_NS;
 
 int main(int argc, char** argv)
 {

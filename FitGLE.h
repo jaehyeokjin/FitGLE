@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <vector>
-#include <Frame.h>
+#include "Frame.h"
 #include <memory>
 #include <gsl/gsl_bspline.h>
 
@@ -36,7 +36,7 @@ public:
     
     //helper functions
     double distance(std::vector<double> &, std::vector<double> &);
-    vector<double> parallelVelocity(int i, int j);
+    std::vector<double> parallelVelocity(int i, int j);
 
 private:
     std::shared_ptr<class Frame> trajFrame;

@@ -1,9 +1,12 @@
 #include "Frame.h"
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 using namespace FITGLE_NS;
 
 Frame::Frame(int n, char* fileName)
 {
-    trajectory = fopen(fileName, 'r');
+    trajectory = fopen(fileName, "r");
     numParticles = n;
     positions.resize(numParticles);
     residualForces.resize(numParticles);
@@ -16,7 +19,7 @@ Frame::Frame(int n, char* fileName)
     }
 }
 
-~Frame::Frame()
+Frame::~Frame()
 {
     fclose(trajectory);
     printf("cleaning up Frame Information\n");
