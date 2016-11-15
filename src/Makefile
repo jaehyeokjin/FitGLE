@@ -7,8 +7,8 @@ LIBCBLAS = /project/gavoth/ynhan/local/CBLAS/lib/
 
 WARN_FLAGS = -Wall
 
-OPT = -O2 -std=c++11 $(WARN_FLAGS)
-MKL_OPT = -O2 -lmkl_gf_lp64 -lmkl_intel_thread -lmkl_core -fopenmp -std=c++11 $(WARN_FLAGS)
+OPT     = -std=c++11 $(WARN_FLAGS)
+MKL_OPT = -lmkl_gf_lp64 -lmkl_intel_thread -lmkl_core -fopenmp -std=c++11 $(WARN_FLAGS)
 
 LIBS         = -lm -lgsl -mkl -lblas -llapacke -llapack -lcblas -lgfortran
 LDFLAGS      = -L$(GSLPATH) -L$(LIBLAPACKPATH) -L$(LIBCBLAS)

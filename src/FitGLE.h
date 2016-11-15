@@ -40,6 +40,7 @@ public:
 
 private:
     std::shared_ptr<class Frame> trajFrame;
+    //class Frame* trajFrame;
     std::shared_ptr<struct InputParameters> info; 
     std::vector<double> divPoints;  // divide points of the b-spline radial ranges
     std::vector<std::vector<double> > normalMatrix;

@@ -16,10 +16,12 @@ FitGLE::FitGLE(int argc, char** argv)
     {
         printf("./FitGLE.x [trajectory Filename] [number of Particles]\n");
     }
+
     assert(argc == 3);
     printf("Initializing FitGLE parameters...\n");
 
     // parsing the configuration parameters
+    info = std::make_shared<InputParameters>();
     VAR_BEGIN
       GET_REAL(info->start)
       GET_REAL(info->end)
@@ -32,6 +34,8 @@ FitGLE::FitGLE(int argc, char** argv)
            
     printf("set up trajectory files\n");
     trajFrame = std::make_shared<Frame>(atoi(argv[2]), argv[1]);
+    //trajFrame = new Frame(atoi(argv[2]), argv[1]);
+    printf("before: %u\n", trajFrame);
     // Initialize the Normal Equation matrix and vectors
     // Set up the size of splines according to order and numbers
     printf("set up b-spline data structures\n");
@@ -39,6 +43,7 @@ FitGLE::FitGLE(int argc, char** argv)
     normalVector.resize(info->numSplines);
     splineCoefficients.resize(info->numSplines);
     normalMatrix.resize(info->numSplines);
+    printf("set up containers\n");
     for (auto&& i : normalMatrix)
     {
         i.resize(info->numSplines);
@@ -101,8 +106,9 @@ inline std::vector<double> FitGLE::parallelVelocity(int i, int j)
 void FitGLE::accumulateNormalEquation()
 {
     int nall = trajFrame->numParticles;
+    printf("np = %d\n", nall);
     int nSplines = info->numSplines;
-
+    printf("nall %d splines %d\n", nall, nSplines);
     std::vector<std::vector<double> > frameMatrix(3 * nall, std::vector<double>(nSplines));
    
     // Computing Matrix F_km 
@@ -111,23 +117,28 @@ void FitGLE::accumulateNormalEquation()
         for (int j = i + 1; j<nall; j++)
         {
             double rij = distance(trajFrame->positions[i], trajFrame->positions[j]);
-            gsl_bspline_eval(rij, splineValue, bw);
-            
-            std::vector<double> dv = parallelVelocity(i, j);
-            
-            for (int m=0; m<nSplines; m++)
+            printf("rij = %lf, %d %d\n", rij, i, j);    
+            if (rij < info->end)
             {
-               double phim = gsl_vector_get(splineValue, m);
-               // For all three dimensions
-               frameMatrix[3*i][m] += phim * dv[0];
-               frameMatrix[3*i + 1][m] += phim * dv[1];
-               frameMatrix[3*i + 2][m] += phim * dv[2];
-               frameMatrix[3*j][m] -= phim * dv[0];
-               frameMatrix[3*j + 1][m] -= phim * dv[1];
-               frameMatrix[3*j + 2][m] -= phim * dv[2];
-            }
+                gsl_bspline_eval(rij, splineValue, bw);
+                printf("rij = %lf, %d %d\n", rij, i, j);    
+                std::vector<double> dv = parallelVelocity(i, j);
+            
+                for (int m=0; m<nSplines; m++)
+                {
+                     double phim = gsl_vector_get(splineValue, m);
+                     // For all three dimensions
+                     frameMatrix[3*i][m] += phim * dv[0];
+                     frameMatrix[3*i + 1][m] += phim * dv[1];
+                     frameMatrix[3*i + 2][m] += phim * dv[2];
+                     frameMatrix[3*j][m] -= phim * dv[0];
+                     frameMatrix[3*j + 1][m] -= phim * dv[1];
+                     frameMatrix[3*j + 2][m] -= phim * dv[2];
+                }
+            }  
         }
     }
+    printf("finishing F\n");
  
     // Constructing the normal Matrix and normal Vector
     for (int m=0; m<nSplines; m++)
@@ -207,9 +218,14 @@ void FitGLE::output()
 // Execution Process
 void FitGLE::exec()
 {
+    printf("Accumulating the LSQ normal Matrix\n");
+    printf("np = %d\n", trajFrame->numParticles);
+    printf("after: %u\n", trajFrame);
     for (int i=0; i<info->steps; i++)
     {
         trajFrame->readFrame();
+        printf("%u\n", trajFrame);
+        printf("reading finished, np = %d\n", trajFrame->numParticles);
         accumulateNormalEquation();
         printf("finishing step %d (total %d)\r", i+1, info->steps);
     }

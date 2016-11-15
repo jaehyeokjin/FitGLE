@@ -17,6 +17,7 @@ Frame::Frame(int n, char* fileName)
       residualForces[i].resize(3);
       velocities[i].resize(3);
     }
+    printf("finishing initializing trajectory frames, %d Particles\n", numParticles);
 }
 
 Frame::~Frame()
@@ -37,7 +38,8 @@ void Frame::readFrame()
         if (iline >= 9)
         {
            char* pch = strtok(line, " \t");
-           int atomID = atoi(pch);
+           int atomID = atoi(pch) - 1;
+           printf("id: %d\n", atomID);
            pch = strtok(NULL, " \t");
            int type = atoi(pch);
            pch = strtok(NULL, " \t");
@@ -62,5 +64,6 @@ void Frame::readFrame()
            residualForces[atomID][2] = atof(pch);
         }
     } 
+    printf("npp = %d\n", numParticles);
 }
 
