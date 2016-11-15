@@ -26,11 +26,16 @@ Frame::~Frame()
     printf("cleaning up Frame Information\n");
 }
 
+int Frame::get()
+{
+  return numParticles;
+}
+
 void Frame::readFrame()
 {
     ssize_t read;
     size_t len;
-    char*  line;
+    char*  line = NULL;
     int    lineID;
     for (int iline = 0; iline < numParticles+9; iline++)
     {
@@ -39,7 +44,6 @@ void Frame::readFrame()
         {
            char* pch = strtok(line, " \t");
            int atomID = atoi(pch) - 1;
-           printf("id: %d\n", atomID);
            pch = strtok(NULL, " \t");
            int type = atoi(pch);
            pch = strtok(NULL, " \t");
@@ -63,7 +67,6 @@ void Frame::readFrame()
            pch = strtok(NULL, " \t");
            residualForces[atomID][2] = atof(pch);
         }
-    } 
-    printf("npp = %d\n", numParticles);
+    }
 }
 

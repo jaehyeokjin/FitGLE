@@ -10,11 +10,12 @@ namespace FITGLE_NS {
 
 class Frame
 {
-    friend class FitGLE;
 public:
+    friend class FitGLE;
     Frame(int n, char* filename);
     ~Frame();
     void readFrame();
+    int get();
 private:
     FILE* trajectory;
     int numParticles;

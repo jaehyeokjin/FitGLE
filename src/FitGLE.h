@@ -16,7 +16,7 @@ struct InputParameters
     double end;    //end distance r1
     int    splineOrder;
     int    numSplines;
-    int    outputPrecision;
+    double outputPrecision;
     double boxLength; 
     int    steps;
     FILE*  fileTraj;

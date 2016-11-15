@@ -35,7 +35,6 @@ FitGLE::FitGLE(int argc, char** argv)
     printf("set up trajectory files\n");
     trajFrame = std::make_shared<Frame>(atoi(argv[2]), argv[1]);
     //trajFrame = new Frame(atoi(argv[2]), argv[1]);
-    printf("before: %u\n", trajFrame);
     // Initialize the Normal Equation matrix and vectors
     // Set up the size of splines according to order and numbers
     printf("set up b-spline data structures\n");
@@ -106,9 +105,7 @@ inline std::vector<double> FitGLE::parallelVelocity(int i, int j)
 void FitGLE::accumulateNormalEquation()
 {
     int nall = trajFrame->numParticles;
-    printf("np = %d\n", nall);
     int nSplines = info->numSplines;
-    printf("nall %d splines %d\n", nall, nSplines);
     std::vector<std::vector<double> > frameMatrix(3 * nall, std::vector<double>(nSplines));
    
     // Computing Matrix F_km 
@@ -117,11 +114,11 @@ void FitGLE::accumulateNormalEquation()
         for (int j = i + 1; j<nall; j++)
         {
             double rij = distance(trajFrame->positions[i], trajFrame->positions[j]);
-            printf("rij = %lf, %d %d\n", rij, i, j);    
+            //printf("rij = %lf, %d %d\n", rij, i, j);    
             if (rij < info->end)
             {
                 gsl_bspline_eval(rij, splineValue, bw);
-                printf("rij = %lf, %d %d\n", rij, i, j);    
+                //printf("rij = %lf, %d %d\n", rij, i, j);    
                 std::vector<double> dv = parallelVelocity(i, j);
             
                 for (int m=0; m<nSplines; m++)
@@ -138,7 +135,6 @@ void FitGLE::accumulateNormalEquation()
             }  
         }
     }
-    printf("finishing F\n");
  
     // Constructing the normal Matrix and normal Vector
     for (int m=0; m<nSplines; m++)
@@ -194,9 +190,12 @@ void FitGLE::leastSquareSolver()
 // Output function for gamma(R)
 void FitGLE::output()
 {
+    printf("output\n");
     double start = info->start;
     double end = info->end;
     double precision = info->outputPrecision;
+    printf("prec = %lf\n", info->outputPrecision);
+    printf("start %lf end %lf precision %lf\n", start, end ,precision);
 
     FILE* fp = fopen("gamma_out.dat", "w");
 
@@ -219,16 +218,13 @@ void FitGLE::output()
 void FitGLE::exec()
 {
     printf("Accumulating the LSQ normal Matrix\n");
-    printf("np = %d\n", trajFrame->numParticles);
-    printf("after: %u\n", trajFrame);
     for (int i=0; i<info->steps; i++)
     {
         trajFrame->readFrame();
-        printf("%u\n", trajFrame);
-        printf("reading finished, np = %d\n", trajFrame->numParticles);
         accumulateNormalEquation();
         printf("finishing step %d (total %d)\r", i+1, info->steps);
     }
+    printf("\n");
     leastSquareSolver();
     output();
 }
