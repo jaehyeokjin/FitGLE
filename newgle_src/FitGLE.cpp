@@ -229,32 +229,39 @@ void FitGLE::leastSquareSolver()
 
     
     // Preconditioning the Normal Matrix
-    /*std::vector<double> h(info->totalBasisSize, 0.0);
+    std::vector<double> h(info->totalBasisSize, 0.0);
+    
     for (int i = 0; i < info->totalBasisSize; i++) {
         for (int j = 0; j < info->totalBasisSize; j++) {
-            h[j] = h[j] + normalMatrix[i][j] * normalMatrix[i][j];  //mat->dense_fm_matrix[j * mat->accumulation_matrix_rows + i] * mat->dense_fm_matrix[j * mat->accumulation_matrix_rows + i];
+            h[j] = h[j] + normalMatrix[j][i] * normalMatrix[j][i];  //mat->dense_fm_matrix[j * mat->accumulation_matrix_rows + i] * mat->dense_fm_matrix[j * mat->accumulation_matrix_rows + i];
         }
     }
+
     for (int i = 0; i < info->totalBasisSize; i++) {
-        if (h[i] < 1.0E-20) h[i] = 1.0;
-        else h[i] = 1.0 / sqrt(h[i]);
+        if (h[i] < 1.0E-20) {
+            h[i] = 1.0;
+            printf("Row %d has negligible nonzero entries; normal equations are ill-formed.")
+        }
+        else {
+            h[i] = 1.0 / sqrt(h[i]);
+        }
     }
-    for (int i =0; i < info->totalBasisSize; i++)
+    for (int i = 0; i < info->totalBasisSize; i++)
     {
-        for (int j=0; j < info->totalBasisSize; j++)
+        for (int j = 0; j < info->totalBasisSize; j++)
            normalMatrix[i][j] *= h[j];
-    }*/
+    }
 
 
     // Store the normalMatrix in container 
-    for (int m = 0; m < info->totalBasisSize; m++)
+    for (int i = 0; i < info->totalBasisSize; i++)
     {
-        for (int n = 0; n < info->totalBasisSize; n++)
+        for (int j = 0; j < info->totalBasisSize; j++)
         {
-            G[ m * info->totalBasisSize + n] = normalMatrix[m][n];
+            G[ i * info->totalBasisSize + j] = normalMatrix[i][j];
         }
-        b[m] = normalVector[m];
-        printf("m %d %lf\n", m, b[m]);
+        b[i] = normalVector[i];
+        printf("m %d %lf\n", i, b[i]);
     }
     
 
@@ -273,7 +280,7 @@ void FitGLE::leastSquareSolver()
     printf("LSQ Solver Info: %d\n", solverInfo);
 
     for (int m = 0; m < info->totalBasisSize; m++)
-        splineCoefficients[m] = b[m];
+        splineCoefficients[m] = b[m] * h[m];
 
     delete[] G;
     delete[] b;

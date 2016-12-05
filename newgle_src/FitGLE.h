@@ -12,8 +12,8 @@ namespace FITGLE_NS {
 
 struct InputParameters
 {
-    double start;  //start distance r0
-    double end;    //end distance r1
+    double start;  // start distance r0
+    double end;    // end distance r1
     int    splineOrder;
     int    totalBasisSize;
     unsigned numColumns;
