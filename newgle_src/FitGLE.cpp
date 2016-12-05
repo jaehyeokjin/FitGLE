@@ -31,24 +31,25 @@ FitGLE::FitGLE(int argc, char** argv)
       GET_INT(info->numSplines)
       GET_INT(info->steps)
     VAR_END
-           
+
     printf("set up trajectory files\n");
     trajFrame = std::make_shared<Frame>(atoi(argv[2]), argv[1]);
     //trajFrame = new Frame(atoi(argv[2]), argv[1]);
     // Initialize the Normal Equation matrix and vectors
-    // Set up the size of splines according to order and numbers
-    printf("set up b-spline data structures\n");
-    int numBreaks = info->numSplines + 2 - info->splineOrder;
-    normalVector.resize(2 * info->numSplines);
-    splineCoefficients.resize(2 * info->numSplines);
-    normalMatrix.resize(2 * info->numSplines);
     printf("set up containers\n");
+    info->totalBasisSize = 2 * info->numSplines;    
+    normalVector.resize(info->totalBasisSize);
+    splineCoefficients.resize(info->totalBasisSize);
+    normalMatrix.resize(info->totalBasisSize);
     for (auto&& i : normalMatrix)
     {
-        i.resize(2 * info->numSplines);
+        i.resize(info->totalBasisSize);
     }
 
+    // Set up the size of splines according to order and numbers
     // Initialize the spline set up
+    printf("set up b-spline data structures\n");
+    int numBreaks = info->numSplines + 2 - info->splineOrder;
     bw = gsl_bspline_alloc(info->splineOrder, numBreaks);
     splineValue = gsl_vector_alloc(info->numSplines);
     gsl_bspline_knots_uniform(info->start, info->end, bw);
@@ -130,6 +131,7 @@ inline std::vector<double> FitGLE::paraVerticalVelocity(int i, int j)
     result[5] = vij[2] - result[2];
     return result;
 }
+
 inline std::vector<double> FitGLE::parallelUnitVector(int i, int j)
 {
     double dx = trajFrame->positions[i][0] - trajFrame->positions[j][0];
@@ -156,13 +158,13 @@ void FitGLE::accumulateNormalEquation()
 {
     int nall = trajFrame->numParticles;
     int nSplines = info->numSplines;
-    std::vector<std::vector<double> > frameMatrix(2 * nSplines, std::vector<double>(3 * nall));
+    std::vector<std::vector<double> > frameMatrix(info->totalBasisSize, std::vector<double>(3 * nall));
     double normalFactor = 1.0 / info->steps;
    
     // Computing Matrix F_km 
-    for (int i=0; i<nall; i++)
+    for (int i = 0; i < nall; i++)
     {
-        for (int j = i+1; j<nall; j++)
+        for (int j = i + 1; j < nall; j++)
         {
             double rij = distance(trajFrame->positions[i], trajFrame->positions[j]);
             if (rij < info->end)
@@ -202,18 +204,18 @@ void FitGLE::accumulateNormalEquation()
 
         
     // Constructing the normal Matrix and normal Vector
-    for (int m=0; m< 2*nSplines; m++)
+    for (int m = 0; m < info->totalBasisSize; m++)
     {
-        for (int n=0; n< 2*nSplines; n++)
+        for (int n = 0; n < info->totalBasisSize; n++)
         {
             double sum = 0.0;
-            for (int k=0; k<3 * nall; k++)
+            for (int k = 0; k < 3 * nall; k++)
                 sum += frameMatrix[m][k] * frameMatrix[n][k];
             normalMatrix[m][n] += sum * normalFactor;
         }
    
         double sum_b = 0.0; 
-        for (int k=0; k<3 * nall; k++)
+        for (int k = 0; k < 3 * nall; k++)
             sum_b += frameMatrix[m][k] * trajFrame->residualForces[k/3][k%3];
         normalVector[m] += sum_b * normalFactor;
     }
@@ -222,34 +224,34 @@ void FitGLE::accumulateNormalEquation()
 void FitGLE::leastSquareSolver()
 {
     // Solving the least square normal equation G*phi = b
-    double* G = new double[4 * info->numSplines * info->numSplines];
-    double* b = new double[2 * info->numSplines];
+    double* G = new double[info->totalBasisSize * info->totalBasisSize];
+    double* b = new double[info->totalBasisSize];
 
     
     // Preconditioning the Normal Matrix
-    /*std::vector<double> h(info->numSplines, 0.0);
-    for (int i = 0; i < info->numSplines; i++) {
-        for (int j = 0; j < info->numSplines; j++) {
+    /*std::vector<double> h(info->totalBasisSize, 0.0);
+    for (int i = 0; i < info->totalBasisSize; i++) {
+        for (int j = 0; j < info->totalBasisSize; j++) {
             h[j] = h[j] + normalMatrix[i][j] * normalMatrix[i][j];  //mat->dense_fm_matrix[j * mat->accumulation_matrix_rows + i] * mat->dense_fm_matrix[j * mat->accumulation_matrix_rows + i];
         }
     }
-    for (int i = 0; i < info->numSplines; i++) {
+    for (int i = 0; i < info->totalBasisSize; i++) {
         if (h[i] < 1.0E-20) h[i] = 1.0;
         else h[i] = 1.0 / sqrt(h[i]);
     }
-    for (int i =0; i < info->numSplines; i++)
+    for (int i =0; i < info->totalBasisSize; i++)
     {
-        for (int j=0; j < info->numSplines; j++)
+        for (int j=0; j < info->totalBasisSize; j++)
            normalMatrix[i][j] *= h[j];
     }*/
 
 
     // Store the normalMatrix in container 
-    for (int m=0; m<2*info->numSplines; m++)
+    for (int m = 0; m < info->totalBasisSize; m++)
     {
-        for (int n=0; n<2*info->numSplines; n++)
+        for (int n = 0; n < info->totalBasisSize; n++)
         {
-            G[m*2*info->numSplines + n] = normalMatrix[m][n];
+            G[ m * info->totalBasisSize + n] = normalMatrix[m][n];
         }
         b[m] = normalVector[m];
         printf("m %d %lf\n", m, b[m]);
@@ -258,19 +260,19 @@ void FitGLE::leastSquareSolver()
 
     // Solving the linear system using SVD decomposition
 
-    int m = 2*info->numSplines;
-    int n = 2*info->numSplines;
+    int m = info->totalBasisSize;
+    int n = info->totalBasisSize;
     int nrhs = 1;
-    int lda = 2*info->numSplines;
+    int lda = info->totalBasisSize;
     int ldb = 1;
     double rcond = -1.0;
     int irank;
-    double* singularValue = new double[2*info->numSplines];
+    double* singularValue = new double[info->totalBasisSize];
     int solverInfo = LAPACKE_dgelss(LAPACK_ROW_MAJOR, m, n, nrhs, G, lda, b, ldb, singularValue, rcond, &irank); 
    
     printf("LSQ Solver Info: %d\n", solverInfo);
 
-    for (int m=0; m<2*info->numSplines; m++)
+    for (int m = 0; m < info->totalBasisSize; m++)
         splineCoefficients[m] = b[m];
 
     delete[] G;
@@ -286,7 +288,7 @@ void FitGLE::output()
     double precision = info->outputPrecision;
 
     FILE* fb = fopen("spline_coeff.dat", "w");
-    for (int m=0; m<2*info->numSplines; m++)
+    for (int m=0; m < info->totalBasisSize; m++)
     {
         fprintf(fb, "%lf\n", splineCoefficients[m]);
     }
@@ -299,7 +301,7 @@ void FitGLE::output()
         double gamma_r = 0.0;
         double gamma_v = 0.0;
         gsl_bspline_eval(start, splineValue, bw);
-        for (int m=0; m<info->numSplines; m++)
+        for (int m = 0; m < info->numSplines; m++)
         {
            gamma_r += splineCoefficients[m] * gsl_vector_get(splineValue, m);
            gamma_v += splineCoefficients[m + info->numSplines] * gsl_vector_get(splineValue, m);
@@ -317,7 +319,7 @@ void FitGLE::output()
 void FitGLE::exec()
 {
     printf("Accumulating the LSQ normal Matrix\n");
-    for (int i=0; i<info->steps; i++)
+    for (int i=0; i < info->steps; i++)
     {
         trajFrame->readFrame();
         accumulateNormalEquation();

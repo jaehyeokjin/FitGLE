@@ -15,7 +15,8 @@ struct InputParameters
     double start;  //start distance r0
     double end;    //end distance r1
     int    splineOrder;
-    int    numSplines;
+    int    totalBasisSize;
+    unsigned numColumns;
     double outputPrecision;
     double boxLength; 
     int    steps;
