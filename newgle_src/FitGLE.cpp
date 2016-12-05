@@ -37,7 +37,7 @@ FitGLE::FitGLE(int argc, char** argv)
     //trajFrame = new Frame(atoi(argv[2]), argv[1]);
     // Initialize the Normal Equation matrix and vectors
     printf("set up containers\n");
-    info->totalBasisSize = 2 * info->numSplines;    
+    info->totalBasisSize = 2 * info->numSplines + 1;    
     normalVector.resize(info->totalBasisSize);
     splineCoefficients.resize(info->totalBasisSize);
     normalMatrix.resize(info->totalBasisSize);
@@ -164,6 +164,10 @@ void FitGLE::accumulateNormalEquation()
     // Computing Matrix F_km 
     for (int i = 0; i < nall; i++)
     {
+        frameMatrix[2 * nSplines][3 * i] = trajFrame->velocities[i][0];
+        frameMatrix[2 * nSplines][3 * i + 1] = trajFrame->velocities[i][1];
+        frameMatrix[2 * nSplines][3 * i + 2] = trajFrame->velocities[i][2];
+
         for (int j = i + 1; j < nall; j++)
         {
             double rij = distance(trajFrame->positions[i], trajFrame->positions[j]);
@@ -184,6 +188,7 @@ void FitGLE::accumulateNormalEquation()
                      if (phim < 1e-20)
 		         continue;
                      // For all three dimensions
+                     // Do the parallel part
                      frameMatrix[m][3*i] += phim * dv[0];
                      frameMatrix[m][3*i + 1] += phim * dv[1];
                      frameMatrix[m][3*i + 2] += phim * dv[2];
@@ -191,6 +196,7 @@ void FitGLE::accumulateNormalEquation()
                      frameMatrix[m][3*j + 1] -= phim * dv[1];
                      frameMatrix[m][3*j + 2] -= phim * dv[2];
 
+                     // Do the perpendicular part
                      frameMatrix[m + nSplines][3*i] += phim * dv[3];
                      frameMatrix[m + nSplines][3*i + 1] += phim * dv[4];
                      frameMatrix[m + nSplines][3*i + 2] += phim * dv[5];
@@ -317,6 +323,10 @@ void FitGLE::output()
         fprintf(fv, "%lf\t%lf\n", start, gamma_v);
         start = start + precision;
     }
+
+    // Print the Langevin friction value from fit
+    // ATTN YINING
+    printf("%lf", splineCoefficients[info->totalBasisSize - 1]);
     
     fclose(fp);
     fclose(fv);
