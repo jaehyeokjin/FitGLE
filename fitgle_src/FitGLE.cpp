@@ -91,6 +91,7 @@ inline std::vector<double> FitGLE::parallelVelocity(int i, int j)
 
     double rij = sqrt(dx*dx + dy*dy + dz*dz);
     double eij[] = {dx/rij, dy/rij, dz/rij};
+    //printf("%lf %lf %lf %lf %lf d %lf %lf %lf\n", eij[0], rij, dx, dy, dz, trajFrame->positions[i][0], trajFrame->positions[j][0], info->boxLength);
     std::vector<double> vij;
     std::transform(trajFrame->velocities[i].begin(), trajFrame->velocities[i].end(), trajFrame->velocities[j].begin(), std::back_inserter(vij), std::minus<double>());
     //printf("%lf %lf delta = %lf\n", trajFrame->velocities[i][0], trajFrame->velocities[j][0], vij[0]); 
