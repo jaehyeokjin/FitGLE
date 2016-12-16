@@ -55,7 +55,7 @@ class PairTable : public Pair {
   };
   int ntables;
   Table *tables;
-  double T; //Temperature
+  double kT; // 1/beta
 
   int **tabindex;
 
