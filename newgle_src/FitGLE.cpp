@@ -171,7 +171,7 @@ void FitGLE::accumulateNormalEquation()
         for (int j = i + 1; j < nall; j++)
         {
             double rij = distance(trajFrame->positions[i], trajFrame->positions[j]);
-            if (rij < info->end)
+            if (rij < info->end && rij > info->start)
             {
                 gsl_bspline_eval(rij, splineValue, bw);
                 //size_t istart, iend;
@@ -246,7 +246,7 @@ void FitGLE::leastSquareSolver()
     for (int i = 0; i < info->totalBasisSize; i++) {
         if (h[i] < 1.0E-20) {
             h[i] = 1.0;
-            printf("Row %d has negligible nonzero entries; normal equations are ill-formed.")
+            printf("Row %d has negligible nonzero entries; normal equations are ill-formed.", i);
         }
         else {
             h[i] = 1.0 / sqrt(h[i]);
